@@ -1,0 +1,13 @@
+# Node
+node_modules/
+npm-debug.log
+backend/database.sqlite
+
+# Python
+__pycache__/
+*.py[cod]
+*.png
+
+# OS
+.DS_Store
+Thumbs.db
