@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIH 26098: Ground Control & Pre-Launch Setter</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #121212;
+        color: #e0e0e0;
+        margin: 0;
+        padding: 20px;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      h1 {
+        color: #4caf50;
+      }
+      .container {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .panel {
+        background: #1e1e1e;
+        border: 1px solid #333;
+        padding: 20px;
+        border-radius: 8px;
+        flex: 1;
+        min-width: 300px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 8px;
+        background: #2d2d2d;
+        border: 1px solid #444;
+        color: #fff;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        cursor: pointer;
+        width: 100%;
+        border-radius: 4px;
+        font-weight: bold;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      .telemetry-box {
+        background: #111;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: monospace;
+        border: 1px solid #333;
+      }
+      .status-armed {
+        color: #ff5722;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>SIH 26098: Artillery Guidance Ground Control Station</h1>
+      <p>Pre-Launch Setter & Live Telemetry Dashboard</p>
+    </header>
+
+    <div class="container">
+      <!-- Pre-Launch Setter Panel -->
+      <div class="panel">
+        <h2>Pre-Launch Setter Interface</h2>
+        <form id="setterForm">
+          <div class="form-group">
+            <label for="latitude">Target Latitude:</label>
+            <input
+              type="number"
+              id="latitude"
+              step="0.0001"
+              value="12.9716"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="longitude">Target Longitude:</label>
+            <input
+              type="number"
+              id="longitude"
+              step="0.0001"
+              value="77.5946"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="altitude">Target Altitude (m):</label>
+            <input type="number" id="altitude" value="920" required />
+          </div>
+          <div class="form-group">
+            <label for="fuze_mode">Electronic Fuze Mode:</label>
+            <select id="fuze_mode">
+              <option value="Proximity">Proximity (Airburst)</option>
+              <option value="Time">Time Delay</option>
+              <option value="Impact">Impact / Point Detonation</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="hob">Height of Burst / Timer (m / s):</label>
+            <input type="number" id="hob" value="15" required />
+          </div>
+          <button type="submit">Transmit Data to Shell (Setter)</button>
+        </form>
+        <p id="responseMsg" style="margin-top: 15px; font-weight: bold"></p>
+      </div>
+
+      <!-- Live Telemetry Panel -->
+      <div class="panel">
+        <h2>In-Flight Live Telemetry</h2>
+        <div class="telemetry-box" id="telemetryDisplay">
+          <p>
+            <strong>Status:</strong>
+            <span class="status-armed">STANDBY / WAITING FOR LAUNCH</span>
+          </p>
+          <p><strong>Pitch Angle:</strong> -- °</p>
+          <p><strong>Yaw Angle:</strong> -- °</p>
+          <p><strong>Launch G-Force:</strong> -- g</p>
+          <p><strong>Target Locked:</strong> None</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Socket.IO Client Library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
