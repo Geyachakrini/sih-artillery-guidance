@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SIH 26098: Ground Control & Pre-Launch Setter</title>
-    <!-- Chart.js CDN for Live Telemetry Graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
@@ -116,14 +115,26 @@
           <div class="form-group">
             <label for="fuze_mode">Electronic Fuze Mode:</label>
             <select id="fuze_mode">
-              <option value="Proximity">Proximity (Airburst)</option>
-              <option value="Time">Time Delay</option>
-              <option value="Impact">Impact / Point Detonation</option>
+              <option value="Proximity">
+                Proximity / Airburst (Time-Based)
+              </option>
+              <option value="Time">Time Delay (Post-Impact)</option>
+              <option value="Impact">
+                Impact / Point Detonation (MEMS High-G)
+              </option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="hob">Height of Burst / Timer (m / s):</label>
-            <input type="number" id="hob" value="15" required />
+          <div class="form-group" id="fuze-time-group">
+            <label for="fuze_time_val" id="fuze_time_label"
+              >Time to Airburst (seconds):</label
+            >
+            <input
+              type="number"
+              id="fuze_time_val"
+              value="12"
+              step="0.1"
+              required
+            />
           </div>
           <button type="submit">Transmit Data to Shell (Setter)</button>
         </form>
@@ -156,7 +167,6 @@
           </p>
         </div>
 
-        <!-- Live Chart Canvas -->
         <div
           style="
             margin-top: 15px;
@@ -169,7 +179,6 @@
           <canvas id="telemetryChart"></canvas>
         </div>
 
-        <!-- Live Stream Console Log -->
         <div style="margin-top: 15px">
           <h3 style="font-size: 14px; color: #aaa; margin-bottom: 5px">
             Live Stream Console
@@ -194,7 +203,6 @@
       </div>
     </div>
 
-    <!-- Socket.IO Client Library -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
   </body>

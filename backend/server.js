@@ -4,6 +4,8 @@ const { Server } = require("socket.io");
 const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
 const path = require("path");
+const { SerialPort } = require("serialport");
+const { ReadlineParser } = require("@serialport/parser-readline");
 
 const app = express();
 const server = http.createServer(app);
@@ -47,7 +49,71 @@ db.serialize(() => {
     )`);
 });
 
-// API: Save Target from Setter UI & Send to Shell
+// Serial Port Connection Setup for DSP/FPGA Board
+const portName = process.env.SERIAL_PORT || "COM3"; // Use 'COMx' on Windows or '/dev/ttyUSB0' on Linux
+let dspPort = null;
+
+try {
+  dspPort = new SerialPort({ path: portName, baudRate: 115200 });
+  const parser = dspPort.pipe(new ReadlineParser({ delimiter: "\n" }));
+
+  dspPort.on("open", () => {
+    console.log(`[Serial] Connected to DSP/FPGA board on ${portName}`);
+  });
+
+  // Read Telemetry stream from DSP over Serial
+  parser.on("data", (line) => {
+    const cleanLine = line.trim();
+    if (!cleanLine) return;
+
+    try {
+      const data = JSON.parse(cleanLine);
+
+      const pitch = data.pitch !== undefined ? data.pitch : 0.0;
+      const yaw = data.yaw !== undefined ? data.yaw : 0.0;
+      const g_force = data.g_force !== undefined ? data.g_force : 1.0;
+      const status = data.status || "UNKNOWN";
+      const c1 = data.canard_1 || 0.0;
+      const c2 = data.canard_2 || 0.0;
+      const c3 = data.canard_3 || 0.0;
+      const c4 = data.canard_4 || 0.0;
+
+      // Save to SQLite
+      db.run(
+        `INSERT INTO telemetry (pitch, yaw, g_force, status, canard_1, canard_2, canard_3, canard_4) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [pitch, yaw, g_force, status, c1, c2, c3, c4],
+        (err) => {
+          if (err) console.error("[DB Error]:", err.message);
+        },
+      );
+
+      // Broadcast live stream to GCS frontend
+      io.emit("liveTelemetry", {
+        pitch,
+        yaw,
+        g_force,
+        status,
+        canard_1: c1,
+        canard_2: c2,
+        canard_3: c3,
+        canard_4: c4,
+      });
+    } catch (err) {
+      // Handles standard debug print statements sent by DSP firmware
+      console.log(`[DSP Debug Output]: ${cleanLine}`);
+    }
+  });
+
+  dspPort.on("error", (err) => {
+    console.error(`[Serial Port Error]: ${err.message}`);
+  });
+} catch (e) {
+  console.warn(
+    `[Serial Warning] Could not connect to ${portName}. Server running in standalone HTTP mode.`,
+  );
+}
+
+// API: Save Target from Setter UI & Send to Shell via Serial
 app.post("/api/set-target", (req, res) => {
   const { latitude, longitude, altitude, fuze_mode, hob } = req.body;
 
@@ -58,30 +124,41 @@ app.post("/api/set-target", (req, res) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
+
       console.log(
         `Target Set -> Mode: ${fuze_mode}, Lat: ${latitude}, Lon: ${longitude}`,
       );
 
+      const targetPayload = { latitude, longitude, altitude, fuze_mode, hob };
+
       // Broadcast target update to frontend dashboard via Socket.IO
-      io.emit("targetUpdated", {
-        latitude,
-        longitude,
-        altitude,
-        fuze_mode,
-        hob,
-      });
+      io.emit("targetUpdated", targetPayload);
+
+      // Flash target parameters to DSP over Serial
+      if (dspPort && dspPort.isOpen) {
+        const serialMsg =
+          JSON.stringify({ type: "SET_TARGET", ...targetPayload }) + "\n";
+        dspPort.write(serialMsg, (writeErr) => {
+          if (writeErr) {
+            console.error("[Serial Write Error]:", writeErr.message);
+          } else {
+            console.log(
+              "[Serial] Target payload transmitted to DSP successfully.",
+            );
+          }
+        });
+      }
 
       res.json({
         success: true,
-        message: "Target configuration transmitted successfully to shell!",
+        message: "Target configuration transmitted successfully to hardware!",
       });
     },
   );
 });
 
-// API: Receive Telemetry from Hardware/ESP32 (Updated to support both full fields and state/angle payloads)
+// API: HTTP Telemetry Endpoint (Fallback for testing or HTTP clients)
 app.post("/api/telemetry", (req, res) => {
-  console.log("Telemetry saved:", req.body);
   const pitch =
     req.body.pitch !== undefined ? req.body.pitch : req.body.angle || 0.0;
   const yaw = req.body.yaw !== undefined ? req.body.yaw : 0.0;
@@ -90,7 +167,6 @@ app.post("/api/telemetry", (req, res) => {
     req.body.status !== undefined
       ? req.body.status
       : req.body.state || "UNKNOWN";
-  // Extract 4 canards (default to 0 if missing)
   const c1 = req.body.canard_1 || 0.0;
   const c2 = req.body.canard_2 || 0.0;
   const c3 = req.body.canard_3 || 0.0;
@@ -102,7 +178,6 @@ app.post("/api/telemetry", (req, res) => {
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
 
-      // Broadcast all parameters to frontend clients via Socket.IO
       io.emit("liveTelemetry", {
         pitch,
         yaw,
@@ -113,12 +188,21 @@ app.post("/api/telemetry", (req, res) => {
         canard_3: c3,
         canard_4: c4,
       });
+
       res.json({
         success: true,
-        message: "4-Canard telemetry recorded successfully",
+        message: "Telemetry recorded successfully",
       });
     },
   );
+});
+
+// API: Get Latest Target (Used by hardware polling if needed)
+app.get("/api/get-target", (req, res) => {
+  db.get("SELECT * FROM targets ORDER BY id DESC LIMIT 1", [], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(row || {});
+  });
 });
 
 // Socket.IO Connection Handler
