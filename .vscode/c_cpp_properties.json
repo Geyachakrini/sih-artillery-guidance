@@ -3,9 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**",
-                "C:/Users/geyachakrini/AppData/Local/Arduino15/packages/esp32/hardware/esp32/**",
-                "C:/Users/geyachakrini/AppData/Local/Arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/**"
+                "${workspaceFolder}/**"
             ],
             "defines": [
                 "_DEBUG",
