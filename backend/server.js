@@ -75,9 +75,17 @@ app.post("/api/set-target", (req, res) => {
   );
 });
 
-// API: Receive Telemetry from Hardware/ESP32
+// API: Receive Telemetry from Hardware/ESP32 (Updated to support both full fields and state/angle payloads)
 app.post("/api/telemetry", (req, res) => {
-  const { pitch, yaw, g_force, status } = req.body;
+  const pitch =
+    req.body.pitch !== undefined ? req.body.pitch : req.body.angle || 0.0;
+  const yaw = req.body.yaw !== undefined ? req.body.yaw : 0.0;
+  const g_force = req.body.g_force !== undefined ? req.body.g_force : 1.0;
+  const status =
+    req.body.status !== undefined
+      ? req.body.status
+      : req.body.state || "UNKNOWN";
+  console.log("Telemetry saved:", req.body);
 
   db.run(
     `INSERT INTO telemetry (pitch, yaw, g_force, status) VALUES (?, ?, ?, ?)`,
@@ -85,9 +93,12 @@ app.post("/api/telemetry", (req, res) => {
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
 
-      // Push live telemetry to frontend clients
+      // Push live telemetry to frontend clients via Socket.IO
       io.emit("liveTelemetry", { pitch, yaw, g_force, status });
-      res.json({ success: true });
+      res.json({
+        success: true,
+        message: "Telemetry packet recorded by Ground Control Station",
+      });
     },
   );
 });

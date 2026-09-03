@@ -134,12 +134,41 @@
         <div class="telemetry-box" id="telemetryDisplay">
           <p>
             <strong>Status:</strong>
-            <span class="status-armed">STANDBY / WAITING FOR LAUNCH</span>
+            <span id="status-val" class="status-armed"
+              >STANDBY / WAITING FOR LAUNCH</span
+            >
           </p>
-          <p><strong>Pitch Angle:</strong> -- °</p>
-          <p><strong>Yaw Angle:</strong> -- °</p>
-          <p><strong>Launch G-Force:</strong> -- g</p>
-          <p><strong>Target Locked:</strong> None</p>
+          <p><strong>Pitch Angle:</strong> <span id="pitch-val">--</span> °</p>
+          <p><strong>Yaw Angle:</strong> <span id="yaw-val">--</span> °</p>
+          <p>
+            <strong>Launch G-Force:</strong> <span id="g-force-val">--</span> g
+          </p>
+          <p>
+            <strong>Target Locked:</strong> <span id="target-val">None</span>
+          </p>
+        </div>
+
+        <!-- Live Stream Console Log -->
+        <div style="margin-top: 15px">
+          <h3 style="font-size: 14px; color: #aaa; margin-bottom: 5px">
+            Live Stream Console
+          </h3>
+          <div
+            id="logConsole"
+            style="
+              background: #111;
+              border: 1px solid #333;
+              padding: 10px;
+              border-radius: 4px;
+              height: 100px;
+              overflow-y: auto;
+              font-family: monospace;
+              font-size: 11px;
+              color: #4caf50;
+            "
+          >
+            [System] Waiting for telemetry stream...
+          </div>
         </div>
       </div>
     </div>

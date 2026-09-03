@@ -1,5 +1,6 @@
 const socket = io();
 
+// Handle Pre-Launch Setter Form Submission
 document
   .getElementById("setterForm")
   .addEventListener("submit", async function (e) {
@@ -40,12 +41,34 @@ document
     }
   });
 
+// Listen for live telemetry updates from backend/ESP32
 socket.on("liveTelemetry", (data) => {
-  const box = document.getElementById("telemetryDisplay");
-  box.innerHTML = `
-        <p><strong>Status:</strong> <span class="status-armed">${data.status}</span></p>
-        <p><strong>Pitch Angle:</strong> ${data.pitch.toFixed(2)} °</p>
-        <p><strong>Yaw Angle:</strong> ${data.yaw.toFixed(2)} °</p>
-        <p><strong>Launch G-Force:</strong> ${data.g_force.toFixed(1)} g</p>
-    `;
+  document.getElementById("status-val").innerText = data.status;
+  document.getElementById("pitch-val").innerText = Number(data.pitch).toFixed(
+    2,
+  );
+  document.getElementById("yaw-val").innerText = Number(data.yaw).toFixed(2);
+  document.getElementById("g-force-val").innerText = Number(
+    data.g_force,
+  ).toFixed(1);
+
+  appendLog(
+    `[Telemetry] Status: ${data.status} | Pitch: ${data.pitch}° | Yaw: ${data.yaw}° | G: ${data.g_force}g`,
+  );
 });
+
+// Listen for target configuration syncs
+socket.on("targetUpdated", (target) => {
+  document.getElementById("target-val").innerText =
+    `Lat: ${target.latitude}, Lon: ${target.longitude} (${target.fuze_mode})`;
+  appendLog(
+    `[Target Set] Mode: ${target.fuze_mode} | Lat: ${target.latitude} | Lon: ${target.longitude}`,
+  );
+});
+
+function appendLog(message) {
+  const consoleDiv = document.getElementById("logConsole");
+  const timestamp = new Date().toLocaleTimeString();
+  consoleDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+  consoleDiv.scrollTop = consoleDiv.scrollHeight;
+}
