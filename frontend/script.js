@@ -1,5 +1,43 @@
 const socket = io();
 
+// Initialize Chart.js graph
+const ctx = document.getElementById("telemetryChart").getContext("2d");
+const telemetryChart = new Chart(ctx, {
+  type: "line",
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: "Pitch (°)",
+        data: [],
+        borderColor: "#4caf50",
+        backgroundColor: "rgba(76, 175, 80, 0.1)",
+        borderWidth: 2,
+        tension: 0.2,
+      },
+      {
+        label: "Yaw (°)",
+        data: [],
+        borderColor: "#2196f3",
+        backgroundColor: "rgba(33, 150, 243, 0.1)",
+        borderWidth: 2,
+        tension: 0.2,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    animation: false,
+    scales: {
+      y: { grid: { color: "#222" }, ticks: { color: "#aaa" } },
+      x: { grid: { color: "#222" }, ticks: { color: "#aaa" } },
+    },
+    plugins: {
+      legend: { labels: { color: "#fff", font: { size: 11 } } },
+    },
+  },
+});
+
 // Handle Pre-Launch Setter Form Submission
 document
   .getElementById("setterForm")
@@ -55,6 +93,18 @@ socket.on("liveTelemetry", (data) => {
   appendLog(
     `[Telemetry] Status: ${data.status} | Pitch: ${data.pitch}° | Yaw: ${data.yaw}° | G: ${data.g_force}g`,
   );
+
+  // Push new point into chart and keep last 15 points
+  const timeLabel = new Date().toLocaleTimeString();
+  if (telemetryChart.data.labels.length > 15) {
+    telemetryChart.data.labels.shift();
+    telemetryChart.data.datasets[0].data.shift();
+    telemetryChart.data.datasets[1].data.shift();
+  }
+  telemetryChart.data.labels.push(timeLabel);
+  telemetryChart.data.datasets[0].data.push(data.pitch);
+  telemetryChart.data.datasets[1].data.push(data.yaw);
+  telemetryChart.update();
 });
 
 // Listen for target configuration syncs

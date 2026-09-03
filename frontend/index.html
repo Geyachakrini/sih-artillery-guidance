@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SIH 26098: Ground Control & Pre-Launch Setter</title>
+    <!-- Chart.js CDN for Live Telemetry Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -30,7 +32,7 @@
         padding: 20px;
         border-radius: 8px;
         flex: 1;
-        min-width: 300px;
+        min-width: 350px;
       }
       .form-group {
         margin-bottom: 15px;
@@ -148,6 +150,19 @@
           </p>
         </div>
 
+        <!-- Live Chart Canvas -->
+        <div
+          style="
+            margin-top: 15px;
+            background: #111;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+          "
+        >
+          <canvas id="telemetryChart"></canvas>
+        </div>
+
         <!-- Live Stream Console Log -->
         <div style="margin-top: 15px">
           <h3 style="font-size: 14px; color: #aaa; margin-bottom: 5px">
@@ -160,7 +175,7 @@
               border: 1px solid #333;
               padding: 10px;
               border-radius: 4px;
-              height: 100px;
+              height: 90px;
               overflow-y: auto;
               font-family: monospace;
               font-size: 11px;
