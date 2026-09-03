@@ -90,11 +90,25 @@ socket.on("liveTelemetry", (data) => {
     data.g_force,
   ).toFixed(1);
 
+  // Update 4 Canards UI fields safely
+  document.getElementById("c1-val").innerText = Number(
+    data.canard_1 || 0,
+  ).toFixed(1);
+  document.getElementById("c2-val").innerText = Number(
+    data.canard_2 || 0,
+  ).toFixed(1);
+  document.getElementById("c3-val").innerText = Number(
+    data.canard_3 || 0,
+  ).toFixed(1);
+  document.getElementById("c4-val").innerText = Number(
+    data.canard_4 || 0,
+  ).toFixed(1);
+
   appendLog(
-    `[Telemetry] Status: ${data.status} | Pitch: ${data.pitch}° | Yaw: ${data.yaw}° | G: ${data.g_force}g`,
+    `[Telemetry] State: ${data.status} | C1:${data.canard_1}° C2:${data.canard_2}° C3:${data.canard_3}° C4:${data.canard_4}°`,
   );
 
-  // Push new point into chart and keep last 15 points
+  // Chart update logic...
   const timeLabel = new Date().toLocaleTimeString();
   if (telemetryChart.data.labels.length > 15) {
     telemetryChart.data.labels.shift();

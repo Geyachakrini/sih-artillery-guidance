@@ -39,6 +39,10 @@ db.serialize(() => {
         yaw REAL,
         g_force REAL,
         status TEXT,
+        canard_1 REAL,
+        canard_2 REAL,
+        canard_3 REAL,
+        canard_4 REAL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 });
@@ -77,6 +81,7 @@ app.post("/api/set-target", (req, res) => {
 
 // API: Receive Telemetry from Hardware/ESP32 (Updated to support both full fields and state/angle payloads)
 app.post("/api/telemetry", (req, res) => {
+  console.log("Telemetry saved:", req.body);
   const pitch =
     req.body.pitch !== undefined ? req.body.pitch : req.body.angle || 0.0;
   const yaw = req.body.yaw !== undefined ? req.body.yaw : 0.0;
@@ -85,19 +90,32 @@ app.post("/api/telemetry", (req, res) => {
     req.body.status !== undefined
       ? req.body.status
       : req.body.state || "UNKNOWN";
-  console.log("Telemetry saved:", req.body);
+  // Extract 4 canards (default to 0 if missing)
+  const c1 = req.body.canard_1 || 0.0;
+  const c2 = req.body.canard_2 || 0.0;
+  const c3 = req.body.canard_3 || 0.0;
+  const c4 = req.body.canard_4 || 0.0;
 
   db.run(
-    `INSERT INTO telemetry (pitch, yaw, g_force, status) VALUES (?, ?, ?, ?)`,
-    [pitch, yaw, g_force, status],
+    `INSERT INTO telemetry (pitch, yaw, g_force, status, canard_1, canard_2, canard_3, canard_4) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [pitch, yaw, g_force, status, c1, c2, c3, c4],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
 
-      // Push live telemetry to frontend clients via Socket.IO
-      io.emit("liveTelemetry", { pitch, yaw, g_force, status });
+      // Broadcast all parameters to frontend clients via Socket.IO
+      io.emit("liveTelemetry", {
+        pitch,
+        yaw,
+        g_force,
+        status,
+        canard_1: c1,
+        canard_2: c2,
+        canard_3: c3,
+        canard_4: c4,
+      });
       res.json({
         success: true,
-        message: "Telemetry packet recorded by Ground Control Station",
+        message: "4-Canard telemetry recorded successfully",
       });
     },
   );
